@@ -1,15 +1,19 @@
+import { useContext } from 'react';
 import Grid from '@material-ui/core/Grid';
+import { CalculatorContext } from '../context/CalculatorContext';
 
 function Key({ text, className }) {
+	const { determineAction } = useContext(CalculatorContext);
+
+	const handleClick = ({ target }) => {
+		determineAction(target.innerText);
+	};
+
 	return (
-		<Grid
-			// display="flex"
-			// alignItems="center"
-			className="keyboard__key"
-			item
-			xs={3}
-		>
-			<div className={className}>{text}</div>
+		<Grid className="keyboard__key" item xs={3}>
+			<button onClick={handleClick} className={className}>
+				{text}
+			</button>
 		</Grid>
 	);
 }

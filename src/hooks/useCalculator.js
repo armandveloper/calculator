@@ -6,6 +6,20 @@ export const useCalculator = () => {
 	const [screenSmallText, setSmallText] = useState('');
 	const [shouldClearText, setShouldClearText] = useState(false);
 
+	const [errorInfo, setErrorInfo] = useState({
+		error: false,
+		errorMsg: null,
+	});
+
+	const closeToast = () => {
+		setTimeout(() => {
+			setErrorInfo({
+				error: false,
+				errorMsg: null,
+			});
+		}, 2800);
+	};
+
 	const printDigit = useCallback(
 		(digit) => {
 			setScreenText((text) => {
@@ -61,8 +75,20 @@ export const useCalculator = () => {
 
 					break;
 				case '÷':
+					if (+screenText === 0) {
+						clearAll();
+						setErrorInfo({
+							error: true,
+							errorMsg: "Can't divide by 0",
+						});
+						closeToast();
+						return '';
+					}
 					result = pendingOp / +screenText;
 
+					break;
+				case '%':
+					result = (pendingOp / 100) * +screenText;
 					break;
 				default:
 			}
@@ -74,6 +100,8 @@ export const useCalculator = () => {
 	const calculate = useCallback(
 		(operator) => {
 			let result;
+			// Si solo hay un punto no hace nada
+			if (screenText === '.') return;
 			switch (operator) {
 				case 'Enter':
 				case '=':
@@ -132,6 +160,11 @@ export const useCalculator = () => {
 					if (!screenSmallText) {
 						result = +screenText;
 					} else {
+						// Si intenta divide por 0
+						if (+screenText === 0) {
+							clearAll();
+							return;
+						}
 						// Quita el último operador del final
 						result =
 							+screenSmallText.substring(
@@ -141,9 +174,24 @@ export const useCalculator = () => {
 					}
 					printResult(result, '÷');
 					break;
+				case '%':
+					// Si aún no hay un número solo coloca el valor
+					if (!screenSmallText) {
+						result = +screenText;
+					} else {
+						result =
+							(+screenSmallText.substring(
+								0,
+								screenSmallText.length - 1
+							) /
+								100) *
+							+screenText;
+					}
+					printResult(result, '%');
+
+					break;
 				default:
 			}
-			console.log('Doing operation:', operator);
 		},
 		[screenText, screenSmallText, doOperation]
 	);
@@ -197,5 +245,7 @@ export const useCalculator = () => {
 		screenText,
 		determineAction,
 		screenSmallText,
+		error: errorInfo.error,
+		errorMsg: errorInfo.errorMsg,
 	};
 };

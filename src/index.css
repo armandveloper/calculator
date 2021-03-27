@@ -42,6 +42,16 @@ body.dark {
 	overflow: hidden;
 	display: flex;
 	flex-direction: column;
+	max-width: 42rem;
+	margin: 0 auto;
+}
+@media (min-width: 56.25em) {
+	.calculator {
+		border: 1px solid var(--color-blue);
+		border-radius: 1rem;
+		height: 90vh;
+		margin-top: 5vh;
+	}
 }
 button {
 	background: none;
@@ -143,4 +153,7 @@ button:focus {
 	fill: none;
 	stroke: currentColor;
 	stroke-width: 2.5px;
+}
+.MuiAlert-message {
+	font-size: 1.6rem;
 }

@@ -2,11 +2,11 @@ import { useContext } from 'react';
 import { CalculatorContext } from '../context/CalculatorContext';
 
 function Screen() {
-	const { screenText } = useContext(CalculatorContext);
+	const { screenText, screenSmallText } = useContext(CalculatorContext);
 
 	return (
 		<div className="screen">
-			<div className="entry"></div>
+			<div className="screen__small">{screenSmallText}</div>
 			<span className="screen__big">{screenText}</span>
 		</div>
 	);

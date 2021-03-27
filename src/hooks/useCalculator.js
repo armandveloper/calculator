@@ -3,51 +3,186 @@ import { digits, operators, validKeys } from '../helpers/keyboard';
 
 export const useCalculator = () => {
 	const [screenText, setScreenText] = useState('');
+	const [screenSmallText, setSmallText] = useState('');
+	const [shouldClearText, setShouldClearText] = useState(false);
 
-	const printDigit = (digit) => {
+	const printDigit = useCallback(
+		(digit) => {
+			setScreenText((text) => {
+				// Decide si limpia el texto grande para colocar el nuevo número
+				if (shouldClearText) {
+					setShouldClearText(false);
+					return digit;
+				}
+
+				// Si ya hay un punto no coloca otro
+				if (digit === '.' && text.includes('.')) return text;
+				return text + digit;
+			});
+		},
+		[shouldClearText]
+	);
+
+	const toggleSign = () => {
 		setScreenText((text) => {
-			// Si ya hay un punto no coloca otro
-			if (digit === '.' && text.includes('.')) {
-				return text;
-			}
-			return text + digit;
+			// Si tiene el signo menos lo quita para convertir a positivo. Si no lo concatena para pasar de + a -
+			return text[0] === '-' ? text.replace('-', '') : '-' + text;
 		});
 	};
 
-	const calculate = (operator) => {
-		console.log('Doing operation:', operator);
+	const printResult = (result, sign) => {
+		if (sign === '=') {
+			setSmallText('');
+			setScreenText(result.toString());
+			return;
+		}
+		setSmallText(result + sign);
+		setScreenText(result.toString());
+		setShouldClearText(true);
 	};
+
+	const doOperation = useCallback(
+		(operator) => {
+			let result;
+			const pendingOp = +screenSmallText.substring(
+				0,
+				screenSmallText.length - 1
+			);
+			switch (operator) {
+				case '+':
+					result = pendingOp + +screenText;
+					break;
+				case '-':
+					result = pendingOp - +screenText;
+
+					break;
+				case '⨯':
+					result = pendingOp * +screenText;
+
+					break;
+				case '÷':
+					result = pendingOp / +screenText;
+
+					break;
+				default:
+			}
+			return result;
+		},
+		[screenText, screenSmallText]
+	);
+
+	const calculate = useCallback(
+		(operator) => {
+			let result;
+			switch (operator) {
+				case 'Enter':
+				case '=':
+					result = screenSmallText
+						? doOperation(
+								screenSmallText[screenSmallText.length - 1]
+						  )
+						: !screenSmallText && screenText
+						? +screenText
+						: '';
+					printResult(result, '=');
+					break;
+				case '±':
+					toggleSign();
+					break;
+				case '+':
+					// Quita el último operador del final
+					result =
+						+screenSmallText.substring(
+							0,
+							screenSmallText.length - 1
+						) + +screenText;
+					printResult(result, '+');
+					break;
+				case '−':
+
+				case '-':
+					if (!screenSmallText) {
+						result = +screenText;
+					} else {
+						// Quita el último operador del final
+						result =
+							+screenSmallText.substring(
+								0,
+								screenSmallText.length - 1
+							) - +screenText;
+					}
+					printResult(result, '-');
+					break;
+				case '⨯':
+				case '*':
+					if (!screenSmallText) {
+						result = +screenText;
+					} else {
+						// Quita el último operador del final
+						result =
+							+screenSmallText.substring(
+								0,
+								screenSmallText.length - 1
+							) * +screenText;
+					}
+					printResult(result, '⨯');
+					break;
+				case '÷':
+				case '/':
+					if (!screenSmallText) {
+						result = +screenText;
+					} else {
+						// Quita el último operador del final
+						result =
+							+screenSmallText.substring(
+								0,
+								screenSmallText.length - 1
+							) / +screenText;
+					}
+					printResult(result, '÷');
+					break;
+				default:
+			}
+			console.log('Doing operation:', operator);
+		},
+		[screenText, screenSmallText, doOperation]
+	);
 
 	const clearAll = () => {
 		setScreenText('');
+		setSmallText('');
+		setShouldClearText(false);
 	};
 
 	const clearLastChar = () => {
 		setScreenText((text) => text.substring(0, text.length - 1));
 	};
 
-	const determineAction = useCallback((key) => {
-		const isDigit = digits.includes(key);
-		if (isDigit) {
-			return printDigit(key);
-		}
-		const isOperator = operators.includes(key);
-		if (isOperator) {
-			return calculate(key);
-		}
-		// Para limpiar
-		if (key === 'AC' || key === 'Escape') {
-			return clearAll();
-		}
-		clearLastChar();
-	}, []);
+	const determineAction = useCallback(
+		(key) => {
+			const isDigit = digits.includes(key);
+			if (isDigit) {
+				return printDigit(key);
+			}
+			const isOperator = operators.includes(key);
+			if (isOperator) {
+				return calculate(key);
+			}
+			// Para limpiar
+			if (key === 'AC' || key === 'Escape') {
+				return clearAll();
+			}
+			clearLastChar();
+		},
+		[calculate, printDigit]
+	);
 
 	useEffect(() => {
 		const handleKeyUp = (e) => {
+			e.target.blur();
 			const { key } = e;
 			const isValid = validKeys.includes(key);
 			if (!isValid) return;
-
 			determineAction(key);
 		};
 
@@ -61,5 +196,6 @@ export const useCalculator = () => {
 	return {
 		screenText,
 		determineAction,
+		screenSmallText,
 	};
 };
